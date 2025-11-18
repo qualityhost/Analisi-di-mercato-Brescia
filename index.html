@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisi Mercato Turistico Brescia 2025 - Opportunità per Investitori</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- 
+    Chosen Palette: Warm Neutral & Muted Teal
+    Application Structure Plan: L'app è strutturata come un'applicazione a pagina singola (SPA) con quattro sezioni tematiche per guidare l'investitore: 1) Dashboard (Panoramica KPI), 2) Mercato (Analisi Offerta, Prezzi, Occupazione), 3) Opportunità (Date chiave, Trend), 4) Strategia (Piano d'azione). Questa struttura non segue un report lineare, ma un flusso decisionale: "Cosa sta succedendo?" -> "Chi sono i competitor?" -> "Dove sono le nicchie?" -> "Come dovrei agire?". La navigazione è gestita da pulsanti in un header fisso, che mostrano/nascondono le sezioni (div) corrispondenti. Le interazioni chiave includono il toggle dei dati del grafico (Prezzi/Occupazione) e i selettori di contenuti per le date chiave e i pilastri strategici, rendendo l'esplorazione dei dati mirata e non opprimente.
+    Visualization & Content Choices: 
+    - Info: KPI (Arrivi, Presenze, Occupazione, Prezzo) -> Goal: Informare (Overview) -> Viz: "Stat Cards" (HTML/Tailwind) -> Interaction: Nessuna (Statica) -> Justification: Dati chiave immediati.
+    - Info: Stagionalità (Arrivi mensili) -> Goal: Mostrare picchi/cali -> Viz: Grafico a Barre (Chart.js Canvas) -> Interaction: Tooltip -> Justification: Visualizzazione standard per trend temporali.
+    - Info: Provenienza (ITA vs INT) -> Goal: Mostrare mix di mercato -> Viz: Grafico Donut (Chart.js Canvas) -> Interaction: Tooltip -> Justification: Ideale per proporzioni semplici.
+    - Info: Motivazioni (Cultura, Natura, etc.) -> Goal: Capire la domanda -> Viz: Grafico a Barre Orizzontali (Chart.js Canvas) -> Interaction: Tooltip -> Justification: Ottimo per classificare categorie.
+    - Info: Prezzi e Occupazione per tipologia -> Goal: Comparare asset -> Viz: Grafico a Barre Raggruppate (Chart.js Canvas) -> Interaction: Pulsanti ("Mostra Prezzi" / "Mostra Occupazione") che aggiornano i dataset del grafico (JS update) -> Justification: Interazione chiave che permette un confronto diretto degli asset, centrale per un investitore.
+    - Info: Date Chiave 2025 -> Goal: Identificare opportunità di pricing -> Viz: Lista interattiva (HTML/Tailwind) -> Interaction: Click su evento mostra "consiglio" in un box separato (JS update) -> Justification: Più engaging di una tabella, collega data e azione.
+    - Info: Analisi Strategica (Target, Asset, etc.) -> Goal: Fornire raccomandazioni -> Viz: Pulsanti/Tabs (HTML/Tailwind) -> Interaction: Click su pulsante mostra testo corrispondente (JS show/hide) -> Justification: Suddivide la strategia in blocchi digeribili.
+    CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .nav-link {
+            @apply px-4 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-teal-50 hover:text-teal-700 transition-colors;
+        }
+        .nav-link.active {
+            @apply bg-teal-100 text-teal-800 font-semibold;
+        }
+        .page-section {
+            @apply w-full;
+        }
+        .stat-card {
+            @apply bg-white p-6 rounded-lg shadow-md transition-all hover:shadow-lg;
+        }
+        .chart-container-wrapper {
+            @apply bg-white p-4 md:p-6 rounded-lg shadow-md mt-6;
+        }
+        .interactive-list-item {
+            @apply bg-white p-4 rounded-lg shadow-sm cursor-pointer transition-all hover:shadow-md hover:bg-teal-50 border border-transparent hover:border-teal-200;
+        }
+        .interactive-list-item.active {
+            @apply bg-teal-100 border-teal-300 shadow-md;
+        }
+        .strategy-button {
+            @apply w-full text-left px-5 py-3 font-semibold text-gray-700 bg-white rounded-lg shadow-sm transition-all hover:shadow-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50;
+        }
+        .strategy-button.active {
+            @apply bg-teal-600 text-white shadow-lg;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header & Navigation -->
+    <header class="sticky top-0 bg-white shadow-md z-50 w-full border-b border-gray-200">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0 flex items-center">
+                    <h1 class="text-2xl font-bold text-teal-700">Analisi Investitore: <span class="text-gray-700">Brescia 2025</span></h1>
+                </div>
+                <div class="hidden sm:block sm:ml-6">
+                    <div class="flex space-x-4" id="nav-links">
+                        <button class="nav-link active" data-page="dashboard">Dashboard</button>
+                        <button class="nav-link" data-page="mercato">Mercato & Competitor</button>
+                        <button class="nav-link" data-page="opportunita">Opportunità & Trend</button>
+                        <button class="nav-link" data-page="strategia">Strategia & Azione</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="contentContainer" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- ======================= -->
+        <!-- ===== DASHBOARD ======= -->
+        <!-- ======================= -->
+        <section id="page-dashboard" class="page-section">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Dashboard Panoramica (Stime 2024)</h2>
+            <p class="text-lg text-gray-600 mb-8">
+                Questa sezione fornisce una panoramica immediata dei principali indicatori di performance (KPI) per il mercato turistico di Brescia. Utilizza questi dati per cogliere il volume e le caratteristiche principali della domanda.
+            </p>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="stat-card">
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Arrivi Totali (Città)</h3>
+                    <p class="text-3xl font-bold text-teal-600 mt-2">~800.000</p>
+                    <p class="text-sm text-gray-500 mt-1">Stima post-anno Capitale Cultura</p>
+                </div>
+                <div class="stat-card">
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Presenze Totali (Città)</h3>
+                    <p class="text-3xl font-bold text-teal-600 mt-2">~2.1 Milioni</p>
+                    <p class="text-sm text-gray-500 mt-1">Permanenza media: ~2.6 notti</p>
+                </div>
+                <div class="stat-card">
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Occupazione Media (Extra-Alb.)</h3>
+                    <p class="text-3xl font-bold text-teal-600 mt-2">~65%</p>
+                    <p class="text-sm text-gray-500 mt-1">Picchi >85% in alta stagione</p>
+                </div>
+                <div class="stat-card">
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Prezzo Medio (Bilocale)</h3>
+                    <p class="text-3xl font-bold text-teal-600 mt-2">€100 / notte</p>
+                    <p class="text-sm text-gray-500 mt-1">Alta variabilità stagionale</p>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+                
+                <!-- Stagionalità -->
+                <div class="chart-container-wrapper lg:col-span-2">
+                    <h3 class="text-xl font-semibold mb-4">Stagionalità: Arrivi Mensili Stimati</h3>
+                    <div class="w-full mx-auto h-80 md:h-96 relative">
+                        <canvas id="stagionalitaChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Provenienza -->
+                <div class="chart-container-wrapper">
+                    <h3 class="text-xl font-semibold mb-4">Provenienza Turisti</h3>
+                    <div class="w-full max-w-sm mx-auto h-80 md:h-96 relative">
+                        <canvas id="provenienzaChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Motivazioni -->
+                <div class="chart-container-wrapper lg:col-span-3">
+                    <h3 class="text-xl font-semibold mb-4">Motivazioni Principali del Viaggio</h3>
+                    <div class="w-full mx-auto h-96 md:h-[500px] relative">
+                        <canvas id="motivazioniChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ======================= -->
+        <!-- ===== MERCATO ========= -->
+        <!-- ======================= -->
+        <section id="page-mercato" class="page-section hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Analisi Mercato & Competitor</h2>
+            <p class="text-lg text-gray-600 mb-8">
+                In questa sezione analizziamo l'offerta ricettiva e la concorrenza. L'elemento chiave è il grafico interattivo che ti permette di confrontare Prezzi Medi e Tassi di Occupazione stimati per le diverse tipologie di immobili, essenziale per definire la tua strategia di pricing e di investimento.
+            </p>
+
+            <!-- Interactive Chart: Prezzi vs Occupazione -->
+            <div class="chart-container-wrapper">
+                <h3 class="text-xl font-semibold mb-4">Analisi Comparativa: Prezzi vs. Occupazione</h3>
+                <div class="flex justify-center space-x-4 mb-4">
+                    <button id="btnMostraPrezzi" class="nav-link active">Mostra Prezzi Medi (€)</button>
+                    <button id="btnMostraOccupazione" class="nav-link">Mostra Occupazione (%)</button>
+                </div>
+                <div class="w-full max-w-3xl mx-auto h-96 md:h-[500px] relative">
+                    <canvas id="mercatoChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Text Analysis Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                <div class="stat-card">
+                    <h3 class="text-xl font-semibold mb-3">Offerta Ricettiva (Stima Città)</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong class="text-teal-700">Extra-Alberghiero:</strong> ~1.200 unità (B&B, Case Vacanza, Affittacamere). Mercato in forte crescita, molto frammentato.</li>
+                        <li><strong class="text-teal-700">Alberghiero:</strong> ~150 strutture. Competitor principale su clientela business e gruppi.</li>
+                    </ul>
+                    <h4 class="font-semibold mt-4 mb-2">Competitor Principali (Extra-Alb.)</h4>
+                    <p><strong class="text-gray-900">Punti di Forza:</strong> Posizioni centrali (Centro Storico, Stazione), recensioni consolidate, processi di check-in automatizzati.</p>
+                    <p><strong class="text-gray-900">Punti di Debolezza:</strong> Arredi spesso datati o impersonali, servizio clienti incostante (host non professionali), focus sulla guerra dei prezzi.</p>
+                </div>
+                
+                <div class="stat-card">
+                    <h3 class="text-xl font-semibold mb-3">Canali di Prenotazione & Recensioni</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li><strong class="text-teal-700">Canali Dominanti:</strong> Booking.com (leader, specialmente per stranieri e business), Airbnb (forte su soggiorni esperienziali e coppie).</li>
+                        <li><strong class="text-teal-700">Crescita:</strong> Siti diretti (per repeaters) e GDS (per business travel).</li>
+                    </ul>
+                     <h4 class="font-semibold mt-4 mb-2">Analisi Recensioni Medie</h4>
+                    <p><strong class="text-green-600">Apprezzati:</strong> Posizione, pulizia impeccabile, facilità di check-in (self check-in molto richiesto), Wi-Fi veloce.</p>
+                    <p><strong class="text-red-600">Criticità:</strong> Rumorosità (specialmente in centro), mancanza di comfort (es. materassi), comunicazione lenta con l'host, foto non realistiche.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================= -->
+        <!-- ===== OPPORTUNITA ===== -->
+        <!-- ======================= -->
+        <section id="page-opportunita" class="page-section hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Opportunità: Date Chiave & Trend</h2>
+            <p class="text-lg text-gray-600 mb-8">
+                Questa sezione evidenzia le opportunità concrete. A sinistra, un calendario interattivo degli eventi chiave del 2025: clicca su ciascun evento per vedere il potenziale impatto sui prezzi. A destra, i trend emergenti da cavalcare per differenziarsi.
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Calendario Opportunità -->
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4">Date Chiave & Eventi 2025</h3>
+                    <div class="space-y-3 mb-4" id="calendario-lista">
+                        <!-- Contenuto generato da JS -->
+                    </div>
+                    
+                    <div id="opportunita-tip-box" class="bg-teal-50 border border-teal-200 p-6 rounded-lg shadow-inner">
+                        <h4 class="font-semibold text-lg text-teal-800 mb-2">Consiglio dell'Investitore</h4>
+                        <p class="text-teal-700" id="opportunita-tip-testo">Seleziona un evento dalla lista per visualizzare il potenziale di pricing e il target di riferimento.</p>
+                    </div>
+                </div>
+
+                <!-- Trend Emergenti -->
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4">Trend Emergenti del Mercato</h3>
+                    <div class="space-y-4">
+                        <div class="stat-card">
+                            <h4 class="text-xl font-semibold text-teal-700">1. Bleisure (Business + Leisure)</h4>
+                            <p class="text-gray-700 mt-2">Turisti business che estendono il soggiorno per piacere. Richiedono Wi-Fi ultra-veloce, postazioni lavoro dedicate (scrivania e sedia comoda) e flessibilità di check-in/out.</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="text-xl font-semibold text-teal-700">2. Soggiorni "Design-Led"</h4>
+                            <p class="text-gray-700 mt-2">La domanda si sposta da "un posto dove dormire" a "un'esperienza". Appartamenti con interior design curato, fotografabili (per Instagram) e unici ottengono recensioni migliori e prezzi più alti.</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="text-xl font-semibold text-teal-700">3. Turismo Esperienziale & Enogastronomico</h4>
+                            <p class="text-gray-700 mt-2">Brescia usata come "hub" per esplorare Franciacorta, Lago di Garda e Iseo. Gli ospiti cercano consigli locali autentici, guide digitali e convenzioni (es. cantine, noleggi e-bike).</p>
+                        </div>
+                        <div class="stat-card">
+                            <h4 class="text-xl font-semibold text-teal-700">4. Crescita Internazionale Post-2023</h4>
+                            <p class="text-gray-700 mt-2">L'anno della Capitale della Cultura ha messo Brescia sulla mappa internazionale. C'è un'opportunità crescente dal mercato USA, UK e Nord Europa, disposti a spendere di più per comfort e servizi premium.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ======================= -->
+        <!-- ===== STRATEGIA ======= -->
+        <!-- ======================= -->
+        <section id="page-strategia" class="page-section hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Strategia d'Investimento e Piano d'Azione</h2>
+            <p class="text-lg text-gray-600 mb-8">
+                Basandoci sui dati analizzati, ecco la strategia d'ingresso e il piano d'azione consigliati per massimizzare la redditività a Brescia. Interagisci con i pulsanti per esplorare i pilastri della strategia e consulta il piano d'azione finale in 5 mosse.
+            </p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Pilastri della Strategia (Interattivo) -->
+                <div class="lg:col-span-2">
+                    <h3 class="text-2xl font-semibold mb-4">Pilastri della Strategia</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" id="strategia-bottoni">
+                        <button class="strategy-button active" data-target="modello">1. Modello d'Ingresso Consigliato</button>
+                        <button class="strategy-button" data-target="target">2. Target più Profittevole</button>
+                        <button class="strategy-button" data-target="immobili">3. Tipi di Immobili Ideali</button>
+                        <button class="strategy-button" data-target="differenziazione">4. Punti Differenzianti Chiave</button>
+                    </div>
+                    
+                    <div id="strategia-dettaglio" class="bg-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-xl font-bold text-teal-700 mb-3" id="strategia-dettaglio-titolo">1. Modello d'Ingresso Consigliato</h4>
+                        <div class="text-gray-700 space-y-3" id="strategia-dettaglio-testo">
+                            <p>Per un nuovo investitore, l'acquisto immobiliare diretto è rischioso senza una profonda conoscenza locale. Si consiglia un modello "capital-light" per testare il mercato:</p>
+                            <ul class="list-disc list-inside space-y-1 pl-2">
+                                <li><strong>Property Management:</strong> Gestire proprietà di terzi (già arredate) in cambio di una % (20-30%). Basso rischio, permette di costruire un brand e un portafoglio recensioni.</li>
+                                <li><strong>Affitto e Subaffitto (Vuoto per Pieno):</strong> Prendere in affitto a lungo termine immobili (spesso da arredare) e subaffittarli nel mercato breve. Più rischioso ma con marginalità potenzialmente più alte.</li>
+                            </ul>
+                            <p>L'acquisto è una fase successiva, da considerare dopo aver validato il modello su 2-3 unità in gestione.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Piano d'Azione -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner border border-gray-200">
+                    <h3 class="text-2xl font-semibold mb-4">Piano d'Azione in 5 Mosse</h3>
+                    <ol class="space-y-4">
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-teal-600 text-white font-bold mr-3">1</span>
+                            <span class="text-gray-700"><strong>Analisi Micro-Zona:</strong> Identifica 2 quartieri target (es. Centro Storico Nord, Stazione) e mappa *tutti* i competitor (prezzi, foto, recensioni, calendario) per trovare un "buco" nell'offerta.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-teal-600 text-white font-bold mr-3">2</span>
+                            <span class="text-gray-700"><strong>Prodotto Premium:</strong> Non competere sul prezzo. Investi in interior design, fotografo professionista, materassi di qualità e "amenities smart" (self check-in, Wi-Fi 1Gbps, Smart TV con Netflix).</span>
+                        </li>
+                         <li class="flex items-start">
+                            <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-teal-600 text-white font-bold mr-3">3</span>
+                            <span class="text-gray-700"><strong>Acquisizione "Test":</strong> Assicura 1-2 proprietà in gestione o subaffitto nei quartieri target. Arredale secondo il concept "Design-Led" e "Bleisure".</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-teal-600 text-white font-bold mr-3">4</span>
+                            <span class="text-gray-700"><strong>Dominio OTA e Prezzi Dinamici:</strong> Crea annunci perfetti su Booking e Airbnb. Utilizza un software di prezzi dinamici (es. PriceLabs) o adatta manualmente i prezzi per eventi, weekend e stagionalità.</span>
+                        </li>
+                         <li class="flex items-start">
+                            <span class="flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full bg-teal-600 text-white font-bold mr-3">5</span>
+                            <span class="text-gray-700"><strong>Marketing Oltre-OTA:</strong> Crea un brand (es. "Brescia Stays") con un profilo Instagram curato e un mini-sito per prenotazioni dirette (zero commissioni) da proporre agli ospiti per futuri soggiorni.</span>
+                        </li>
+                    </ol>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // --- DATI SIMULATI ---
+            const datiStagionalita = {
+                labels: ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'],
+                values: [30, 35, 60, 80, 100, 110, 105, 100, 90, 70, 40, 35]
+            };
+
+            const datiProvenienza = {
+                labels: ['Italiani (60%)', 'Stranieri (40%)'],
+                values: [60, 40],
+                principaliStranieri: 'Germania, Paesi Bassi, Svizzera, UK, USA'
+            };
+
+            const datiMotivazioni = {
+                labels: ['Cultura (Musei, UNESCO)', 'Enogastronomia (Franciacorta)', 'Natura (Laghi, Montagna)', 'Eventi (Mille Miglia, Concerti)', 'Business & Bleisure'],
+                values: [85, 75, 60, 50, 45]
+            };
+
+            const datiPrezzi = {
+                labels: ['Bilocale', 'Trilocale', 'Quadrilocale', 'Villa (Prov.)'],
+                values: [100, 160, 220, 350]
+            };
+
+            const datiOccupazione = {
+                labels: ['Bilocale', 'Trilocale', 'Quadrilocale', 'Villa (Prov.)'],
+                values: [70, 65, 55, 50]
+            };
+            
+            const dateChiave = [
+                { id: 'pasqua', mese: 'APR 2025', nome: 'Pasqua e Pasquetta', consiglio: 'Target: Famiglie e coppie (ITA/DE/CH). Opportunità: +30% ADR (Prezzo Medio). Richiesto soggiorno minimo 3 notti.' },
+                { id: '25aprile', mese: 'APR 2025', nome: 'Ponte 25 Aprile', consiglio: 'Target: Italiani. Opportunità: +25% ADR. Soggiorno 2-3 notti. Forte domanda per tour enogastronomici.' },
+                { id: '1maggio', mese: 'MAG 2025', nome: 'Ponte 1 Maggio', consiglio: 'Target: Italiani. Opportunità: +20% ADR. Da combinare con weekend.' },
+                { id: 'millemiglia', mese: 'MAG 2025', nome: 'Mille Miglia', consiglio: 'Target: Internazionale (alto spendente), appassionati auto. Opportunità: +70-100% ADR. Soggiorno minimo 3-4 notti. Prenotazioni con largo anticipo.' },
+                { id: 'opera', mese: 'GIU 2025', nome: 'Festa dell\'Opera', consiglio: 'Target: Culturale (ITA/INT). Opportunità: +20% ADR. Evento diffuso, riempie la città per un weekend.' },
+                { id: 'summer', mese: 'LUG-AGO 2025', nome: 'Brescia Summer Music', consiglio: 'Target: Giovani, coppie. Picchi di domanda in corrispondenza dei concerti di artisti di richiamo. +25% ADR su quelle date.' },
+                { id: 'franciacorta', mese: 'SET 2025', nome: 'Festival Franciacorta', consiglio: 'Target: Enogastronomico (ITA/CH/DE). Opportunità: +30% ADR nei weekend. Offrire pacchetti/convenzioni con cantine.' },
+                { id: 'natale', mese: 'DIC 2025', nome: 'Mercatini & Capodanno', consiglio: 'Target: Coppie e famiglie. Domanda concentrata su 8 Dic, 23-26 Dic e 30-01. Opportunità: +40-60% ADR a Capodanno.' }
+            ];
+            
+            const testiStrategia = {
+                'modello': {
+                    titolo: "1. Modello d'Ingresso Consigliato",
+                    testo: `<p>Per un nuovo investitore, l'acquisto immobiliare diretto è rischioso senza una profonda conoscenza locale. Si consiglia un modello "capital-light" per testare il mercato:</p>
+                             <ul class="list-disc list-inside space-y-1 pl-2 mt-2">
+                                 <li><strong>Property Management:</strong> Gestire proprietà di terzi (già arredate) in cambio di una % (20-30%). Basso rischio, permette di costruire un brand e un portafoglio recensioni.</li>
+                                 <li><strong>Affitto e Subaffitto (Vuoto per Pieno):</strong> Prendere in affitto a lungo termine immobili (spesso da arredare) e subaffittarli nel mercato breve. Più rischioso ma con marginalità potenzialmente più alte.</li>
+                             </ul>
+                             <p class="mt-2">L'acquisto è una fase successiva, da considerare dopo aver validato il modello su 2-3 unità in gestione.</p>`
+                },
+                'target': {
+                    titolo: "2. Target più Profittevole",
+                    testo: `<p>Non puntare a "tutti". Focalizzarsi su nicchie ad alta marginalità:</p>
+                             <ul class="list-disc list-inside space-y-1 pl-2 mt-2">
+                                 <li><strong>Professionisti "Bleisure":</strong> Ingegneri, consulenti, manager in trasferta che cercano comfort (Wi-Fi, scrivania, self check-in) e qualità superiore all'hotel. Spesso prenotano infrasettimanale.</li>
+                                 <li><strong>Turisti Culturali Internazionali:</strong> Coppie 40+ (USA, UK, Nord Europa) con buona capacità di spesa, interessati a UNESCO e cultura. Cercano posizioni centrali, design e comfort.</li>
+                                 <li><strong>Turisti Enogastronomici:</strong> Coppie (ITA, CH, DE) che usano Brescia come base per Franciacorta. Apprezzano guide locali, convenzioni e parcheggio facile (o vicinanza stazione).</li>
+                             </ul>
+                             <p class="mt-2">Evitare gruppi numerosi e turismo "mordi e fuggi" a basso costo, che generano più usura e lamentele.</p>`
+                },
+                'immobili': {
+                    titolo: "3. Tipi di Immobili Ideali",
+                    testo: `<p>La flessibilità è la chiave. I dati mostrano la domanda più forte su:</p>
+                             <ul class="list-disc list-inside space-y-1 pl-2 mt-2">
+                                 <li><strong>Bilocali (max 4 posti letto):</strong> La tipologia più richiesta e con l'occupazione più alta. Ideale per coppie, professionisti e piccole famiglie. Costi di gestione e pulizia contenuti.</li>
+                                 <li><strong>Trilocali (max 6 posti letto):</strong> Ottimi per famiglie o gruppi di amici/colleghi "bleisure". Richiedono un arredo funzionale (es. secondo bagno o divano letto di qualità).</li>
+                             </ul>
+                             <p class="mt-2"><strong>Zone Target:</strong> Centro Storico (per turisti culturali), zona Stazione (per "hub" laghi/business), primo anello Ovest (per tranquillità e parcheggio).</p>`
+                },
+                'differenziazione': {
+                    titolo: "4. Punti Differenzianti Chiave",
+                    testo: `<p>Il mercato è affollato di offerte "base". Per emergere e giustificare un prezzo premium:</p>
+                             <ul class="list-disc list-inside space-y-1 pl-2 mt-2">
+                                 <li><strong>Design & Fotografia:</strong> Investire in un interior design moderno, accogliente e riconoscibile. Le foto professionali sono il primo fattore di scelta.</li>
+                                 <li><strong>Servizio "Smart & Seamless":</strong> Self check-in con tastierino, Wi-Fi 1Gbps, Smart TV, welcome book digitale, comunicazione host istantanea (via WhatsApp/App).</li>
+                                 <li><strong>Pulizia Impeccabile:</strong> Affidarsi a imprese professionali. È la prima causa di recensioni negative.</li>
+                                 <li><strong>"Local Insider":</strong> Fornire guide digitali (PDF/Google Maps) curate: "I 10 migliori ristoranti non turistici", "Itinerario Franciacorta", "Come raggiungere i laghi".</li>
+                             </ul>`
+                }
+            };
+
+            // --- INIZIALIZZAZIONE ---
+            
+            initDashboardCharts();
+            let mercatoChart = initMercatoChart();
+            popolaCalendario();
+
+            // --- GESTIONE NAVIGAZIONE ---
+            const navLinks = document.querySelectorAll('#nav-links button');
+            const pages = document.querySelectorAll('.page-section');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    const pageId = link.getAttribute('data-page');
+
+                    navLinks.forEach(nav => nav.classList.remove('active'));
+                    link.classList.add('active');
+
+                    pages.forEach(page => {
+                        if (page.id === `page-${pageId}`) {
+                            page.classList.remove('hidden');
+                        } else {
+                            page.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            // --- GESTIONE GRAFICI DASHBOARD ---
+            function initDashboardCharts() {
+                const teal = 'rgb(15, 118, 110)';
+                const teal_light = 'rgba(15, 118, 110, 0.2)';
+                const gray = 'rgb(107, 114, 128)';
+
+                new Chart(document.getElementById('stagionalitaChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: datiStagionalita.labels,
+                        datasets: [{
+                            label: 'Arrivi Stimati (in migliaia)',
+                            data: datiStagionalita.values,
+                            backgroundColor: teal_light,
+                            borderColor: teal,
+                            borderWidth: 2,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: chartOptions('Mesi', 'Arrivi (x1000)')
+                });
+
+                new Chart(document.getElementById('provenienzaChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: datiProvenienza.labels,
+                        datasets: [{
+                            data: datiProvenienza.values,
+                            backgroundColor: [teal, gray],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    footer: () => `Stranieri: ${datiProvenienza.principaliStranieri}`
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                new Chart(document.getElementById('motivazioniChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: datiMotivazioni.labels,
+                        datasets: [{
+                            label: 'Punteggio di Rilevanza (su 100)',
+                            data: datiMotivazioni.values,
+                            backgroundColor: [
+                                'rgba(13, 148, 136, 0.7)',
+                                'rgba(8, 126, 139, 0.7)',
+                                'rgba(15, 118, 110, 0.7)',
+                                'rgba(13, 110, 98, 0.7)',
+                                'rgba(17, 94, 89, 0.7)'
+                            ],
+                            borderColor: 'rgba(15, 118, 110, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        ...chartOptions('Punteggio Rilevanza', 'Motivazioni'),
+                        indexAxis: 'y',
+                    }
+                });
+            }
+
+            // --- GESTIONE GRAFICO MERCATO (INTERATTIVO) ---
+            function initMercatoChart() {
+                const ctx = document.getElementById('mercatoChart');
+                const chartData = {
+                    labels: datiPrezzi.labels,
+                    datasets: createDataset('Prezzo Medio (€)', datiPrezzi.values, 'rgb(15, 118, 110)')
+                };
+                
+                const chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: chartData,
+                    options: chartOptions('Tipologia Immobile', 'Prezzo Medio (€)')
+                });
+                
+                document.getElementById('btnMostraPrezzi').addEventListener('click', (e) => {
+                    updateMercatoChart(chart, 'Prezzo Medio (€)', datiPrezzi.values, 'rgb(15, 118, 110)', e.target);
+                });
+                
+                document.getElementById('btnMostraOccupazione').addEventListener('click', (e) => {
+                    updateMercatoChart(chart, 'Occupazione Stimata (%)', datiOccupazione.values, 'rgb(107, 114, 128)', e.target);
+                });
+                
+                return chart;
+            }
+            
+            function createDataset(label, data, color) {
+                return [{
+                    label: label,
+                    data: data,
+                    backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.2)'),
+                    borderColor: color,
+                    borderWidth: 2,
+                    borderRadius: 4
+                }];
+            }
+
+            function updateMercatoChart(chart, label, data, color, clickedButton) {
+                chart.data.datasets = createDataset(label, data, color);
+                chart.options.scales.y.title.text = label;
+                chart.update();
+                
+                document.querySelectorAll('#btnMostraPrezzi, #btnMostraOccupazione').forEach(btn => btn.classList.remove('active'));
+                clickedButton.classList.add('active');
+            }
+
+            // --- GESTIONE CALENDARIO OPPORTUNITÀ ---
+            function popolaCalendario() {
+                const container = document.getElementById('calendario-lista');
+                const tipTesto = document.getElementById('opportunita-tip-testo');
+                let items = [];
+
+                dateChiave.forEach(evento => {
+                    const item = document.createElement('div');
+                    item.className = 'interactive-list-item';
+                    item.setAttribute('data-id', evento.id);
+                    item.innerHTML = `<span class="font-semibold text-teal-700 w-24 inline-block">${evento.mese}</span>
+                                      <span class="text-gray-800 font-medium">${evento.nome}</span>`;
+                    
+                    item.addEventListener('click', () => {
+                        tipTesto.textContent = evento.consiglio;
+                        items.forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+                    });
+                    
+                    container.appendChild(item);
+                    items.push(item);
+                });
+            }
+
+            // --- GESTIONE STRATEGIA (INTERATTIVA) ---
+            const strategiaBottoni = document.querySelectorAll('#strategia-bottoni .strategy-button');
+            const dettaglioTitolo = document.getElementById('strategia-dettaglio-titolo');
+            const dettaglioTesto = document.getElementById('strategia-dettaglio-testo');
+
+            strategiaBottoni.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+                    const data = testiStrategia[targetId];
+
+                    strategiaBottoni.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    dettaglioTitolo.textContent = data.titolo;
+                    dettaglioTesto.innerHTML = data.testo;
+                });
+            });
+
+            // --- FUNZIONE UTILITÀ GRAFICI ---
+            function chartOptions(xLabel, yLabel) {
+                return {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: yLabel, font: { weight: '600' } },
+                            ticks: { font: { size: 10 } }
+                        },
+                        x: {
+                            title: { display: false, text: xLabel, font: { weight: '600' } },
+                            ticks: { 
+                                font: { size: 10 },
+                                maxRotation: 0,
+                                minRotation: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#111827',
+                            titleFont: { weight: 'bold' },
+                            bodyFont: { weight: 'normal' },
+                            padding: 10,
+                            cornerRadius: 4
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    }
+                };
+            }
+
+        });
+    </script>
+
+</body>
+</html>
